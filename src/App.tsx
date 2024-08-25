@@ -3,7 +3,7 @@ import './App.css';
 import { useEffect, useState } from 'react';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
-import { Loading, Error, ResourcesList } from './Components';
+import { Loading, Error, ResourcesList, Information } from './Components';
 
 interface ApiReturnDataStructure {
   count: number;
@@ -66,7 +66,7 @@ function App() {
   const dataType =
     selectedData &&
     Object.entries(selectedData)
-      .filter(([key, value]) => value.count)
+      .filter(([_, value]) => value.count)
       .map(([key, _]) => key);
 
   const chosenResource = dataType[dataType.length - 1];
@@ -88,15 +88,11 @@ function App() {
         ))}
       </Stack>
       <Error isError={isError} />
-      {dataType.length ? (
-        <>
-          <h3>It seems like you have selected {chosenResource}</h3>
-          <h4>
-            Did you know that in the world of Star Wars there are {''}
-            {chosenResourceCount} {chosenResource}?
-          </h4>
-        </>
-      ) : null}
+      <Information
+        dataType={dataType}
+        chosenResource={chosenResource}
+        chosenResourceCount={chosenResourceCount}
+      />
       <Stack
         direction='column'
         spacing={4}

@@ -3,6 +3,7 @@ import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
+import { isArrayOfUrls, isValueUrl } from '../../utils';
 
 interface ResourceCardProps {
   isNested?: boolean;
@@ -12,15 +13,6 @@ interface ResourceCardProps {
 
 export const ResourceCard: React.FC<ResourceCardProps> = (props) => {
   const { isNested, onClick, resource, extraResource } = props;
-
-  // Function to check if a value is a valid URL
-  const isValueUrl = (value: any) =>
-    typeof value === 'string' && value.startsWith('http');
-
-  // Function to check if a value is an array of URLs
-  const isArrayOfUrls = (value: any) =>
-    Array.isArray(value) &&
-    value.every((item) => typeof item === 'string' && item.startsWith('http'));
 
   return (
     <Stack
@@ -59,6 +51,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = (props) => {
                 {!isNested ? (
                   isArrayOfUrls(value) ? (
                     <Button
+                      data-name={resource.name}
                       onClick={onClick}
                       variant='contained'
                       data-url={JSON.stringify(value)}
@@ -67,6 +60,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = (props) => {
                     </Button>
                   ) : isValueUrl(value) ? (
                     <Button
+                      data-name={resource.name}
                       onClick={onClick}
                       variant='outlined'
                       data-url={JSON.stringify(value)}

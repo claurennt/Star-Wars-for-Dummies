@@ -8,10 +8,13 @@ export const ResourcesList = ({ resources }: any) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isError, setIsError] = useState<boolean>(false);
 
-  const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClick = async (
+    e: React.MouseEvent<HTMLButtonElement>,
+    id: string
+  ) => {
     const linksToExtraResources = e.currentTarget.getAttribute('data-url');
-    const id1 = e.currentTarget.getAttribute('data-testid');
-    console.log(id1);
+    const id1 = e.currentTarget.getAttribute('data-name');
+    console.log(id1, id);
     // Convert the string back into an array
     const parsedUrls = linksToExtraResources
       ? JSON.parse(linksToExtraResources)
@@ -54,7 +57,7 @@ export const ResourcesList = ({ resources }: any) => {
           id={resource.name}
           key={resource.name}
           resource={resource}
-          onClick={handleClick}
+          onClick={(e) => handleClick(e, resource.name)}
           extraResource={extraResource}
         />
       ))}
