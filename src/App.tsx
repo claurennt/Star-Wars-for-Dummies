@@ -1,25 +1,41 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import './App.css';
 import { useEffect, useState } from 'react';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
-import { Loading, Error } from './Components';
+import { Loading, Error, ResourceCard } from './Components';
 
+interface ApiReturnDataStructure {
+  count: number;
+  previous: null | string;
+  next: null | string;
+  results: [{ [key: string]: any }] | null;
+}
 function App() {
   const [resources, setResources] = useState<string[]>([]); //TODO: get from localstorage
-  const [selectedData, setSelectedData] = useState<{ [key: string]: {} }>({}); //TODO: get from localstorage
+  const [selectedData, setSelectedData] = useState<{
+    [key: string]: ApiReturnDataStructure;
+  }>({}); //TODO: get from localstorage
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isError, setIsError] = useState<boolean>(false);
+
   useEffect(() => {
     const fetchResources = async () => {
       try {
-        const { data } = await axios.get('https://swapi.dev/api/');
+        const { data } = await axios.get<AxiosResponse>(
+          'https://swapi.dev/api/'
+        );
         const nameOfResources = Object.keys(data);
 
         //TODO: save to localstorage
         setResources(nameOfResources);
         setSelectedData(
-          Object.fromEntries(nameOfResources.map((resource) => [resource, {}]))
+          Object.fromEntries(
+            nameOfResources.map((resource) => [
+              resource,
+              { count: 0, previous: null, next: null, results: null },
+            ])
+          )
         );
         setIsLoading(false);
       } catch (err) {
@@ -47,13 +63,17 @@ function App() {
     }
   };
 
-  // Extract keys from selectedData where the associated values are non-empty objects
-  const dataType = Object.entries(selectedData)
-    .filter(([_, value]) => {
-      // Check if the value object has one or more properties
-      return Object.keys(value).length > 0;
-    })
-    .map(([key, _]) => key); // Extract only the key from the filtered entries
+  const dataType =
+    selectedData &&
+    Object.entries(selectedData)
+      .filter(([key, value]) => value.count)
+      .map(([key, _]) => key);
+
+  const chosenResource = dataType[dataType.length - 1];
+  console.log(selectedData[chosenResource]?.results);
+  const chosenResourceCount = (
+    selectedData[chosenResource] as ApiReturnDataStructure
+  )?.count;
 
   return (
     <div className='App'>
@@ -69,8 +89,25 @@ function App() {
       </Stack>
       <Error isError={isError} />
       {dataType.length ? (
-        <p>It seems like you have selected {dataType[dataType.length - 1]}</p>
+        <>
+          <p>It seems like you have selected {chosenResource}</p>
+          <p>
+            Did you know that in the world of Star Wars there are
+            {chosenResourceCount} {chosenResource}?
+          </p>
+        </>
       ) : null}
+      <Stack
+        direction='row'
+        spacing={4}
+        justifyContent='center'
+        flexWrap='wrap'
+        useFlexGap
+      >
+        {selectedData[chosenResource]?.results?.map((result: any) => (
+          <ResourceCard {...result} key={result.name} />
+        ))}
+      </Stack>
     </div>
   );
 }
