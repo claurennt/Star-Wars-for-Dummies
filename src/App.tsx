@@ -3,7 +3,7 @@ import './App.css';
 import { useEffect, useState } from 'react';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
-import { Loading, Error, ResourceCard } from './Components';
+import { Loading, Error, ResourcesList } from './Components';
 
 interface ApiReturnDataStructure {
   count: number;
@@ -70,7 +70,7 @@ function App() {
       .map(([key, _]) => key);
 
   const chosenResource = dataType[dataType.length - 1];
-  console.log(selectedData[chosenResource]?.results);
+
   const chosenResourceCount = (
     selectedData[chosenResource] as ApiReturnDataStructure
   )?.count;
@@ -90,23 +90,23 @@ function App() {
       <Error isError={isError} />
       {dataType.length ? (
         <>
-          <p>It seems like you have selected {chosenResource}</p>
-          <p>
-            Did you know that in the world of Star Wars there are
+          <h3>It seems like you have selected {chosenResource}</h3>
+          <h4>
+            Did you know that in the world of Star Wars there are {''}
             {chosenResourceCount} {chosenResource}?
-          </p>
+          </h4>
         </>
       ) : null}
       <Stack
-        direction='row'
+        direction='column'
         spacing={4}
         justifyContent='center'
         flexWrap='wrap'
         useFlexGap
       >
-        {selectedData[chosenResource]?.results?.map((result: any) => (
-          <ResourceCard {...result} key={result.name} />
-        ))}
+        {selectedData[chosenResource]?.results && (
+          <ResourcesList resources={selectedData[chosenResource]?.results} />
+        )}
       </Stack>
     </div>
   );
