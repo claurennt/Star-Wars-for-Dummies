@@ -1,65 +1,101 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import './App.css';
 import { useEffect, useState } from 'react';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
-import { Loading, Error } from './Components';
+import { ResourcesList, Information } from './Components';
+import { getFromLocalStorage, saveToLocalStorage } from './utils';
 
+interface ApiReturnDataStructure {
+  count: number;
+  previous: null | string;
+  next: null | string;
+  results: [{ [key: string]: any }] | null;
+}
 function App() {
-  const [resources, setResources] = useState<string[]>([]); //TODO: get from localstorage
-  const [selectedData, setSelectedData] = useState<{ [key: string]: {} }>({}); //TODO: get from localstorage
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isError, setIsError] = useState<boolean>(false);
-  useEffect(() => {
-    const fetchResources = async () => {
-      try {
-        const { data } = await axios.get('https://swapi.dev/api/');
-        const nameOfResources = Object.keys(data);
+  const [resources, setResources] = useState<string[]>([]);
+  const [selectedField, setSelectedField] = useState<string>('');
+  const [allData, setAllData] = useState<{
+    [key: string]: ApiReturnDataStructure;
+  }>({});
 
-        //TODO: save to localstorage
-        setResources(nameOfResources);
-        setSelectedData(
-          Object.fromEntries(nameOfResources.map((resource) => [resource, {}]))
-        );
-        setIsLoading(false);
-      } catch (err) {
-        setIsLoading(false);
-        setIsError(true);
-      }
-    };
-
-    fetchResources();
-  }, []);
-
-  const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    const value = e.currentTarget.innerText.toLowerCase();
-
+  // Fetch resource names and update state
+  const fetchResourcesName = async () => {
     try {
-      const { data } = await axios.get(`https://swapi.dev/api/${value}?page=1`);
+      const { data } = await axios.get<AxiosResponse>('https://swapi.dev/api/');
+      const nameOfResources = Object.keys(data);
 
-      //TODO: save to localstorage
-      setSelectedData((prev) => ({
-        ...prev,
-        [value]: data,
-      }));
+      setResources(nameOfResources);
+      saveToLocalStorage('nameOfResources', nameOfResources);
     } catch (err) {
-      setIsError(true);
+      console.log(err);
     }
   };
 
-  // Extract keys from selectedData where the associated values are non-empty objects
-  const dataType = Object.entries(selectedData)
-    .filter(([_, value]) => {
-      // Check if the value object has one or more properties
-      return Object.keys(value).length > 0;
-    })
-    .map(([key, _]) => key); // Extract only the key from the filtered entries
+  // Fetch data for each resource once resource names are available
+  const fetchResources = async (nameOfResources: string[]) => {
+    try {
+      const promises = nameOfResources.map((resource: string) =>
+        axios.get(`https://swapi.dev/api/${resource}`)
+      );
+      const response = await Promise.all(promises);
+
+      // create state with mapped data and cache data to localstorage
+      const resourceData = nameOfResources.reduce((acc, curr, index) => {
+        acc[curr] = response[index].data;
+
+        saveToLocalStorage(curr, response[index].data);
+        return acc;
+      }, {} as Record<string, any>);
+
+      setAllData(resourceData);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  useEffect(() => {
+    const storedResources = getFromLocalStorage('nameOfResources') as
+      | string[]
+      | null;
+
+    // set state with cached data if available else fetch
+    if (storedResources) {
+      setResources(storedResources);
+    } else {
+      fetchResourcesName();
+    }
+  }, []);
+
+  // Trigger fetching of actual resource data once resource names are available
+  useEffect(() => {
+    // create mapped data structure from cached data
+    const storedData = resources.length
+      ? resources.reduce((acc, curr, index) => {
+          const data = getFromLocalStorage(curr);
+          acc[curr] = data;
+
+          return acc;
+        }, {} as Record<string, any>)
+      : {};
+
+    // set state with cached data if available else fetch
+    if (Object.values(storedData).every((data) => data)) {
+      setAllData(storedData);
+    } else {
+      fetchResources(resources);
+    }
+  }, [resources]);
+
+  const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    const value = e.currentTarget.innerText.toLowerCase();
+    setSelectedField(value);
+  };
 
   return (
     <div className='App'>
       <h1>Star Wars for Dummies</h1>
       <h2>To start exploring the world of Star Wars pick a resource below:</h2>
-      <Loading isLoading={isLoading} />
       <Stack direction='row' spacing={2} justifyContent='center'>
         {resources?.map((resource) => (
           <Button variant='contained' onClick={handleClick} key={resource}>
@@ -67,10 +103,23 @@ function App() {
           </Button>
         ))}
       </Stack>
-      <Error isError={isError} />
-      {dataType.length ? (
-        <p>It seems like you have selected {dataType[dataType.length - 1]}</p>
-      ) : null}
+      {allData[selectedField] && (
+        <Information
+          chosenResource={selectedField}
+          chosenResourceCount={allData[selectedField]?.count}
+        />
+      )}
+      <Stack
+        direction='column'
+        spacing={4}
+        justifyContent='center'
+        flexWrap='wrap'
+        useFlexGap
+      >
+        {selectedField && (
+          <ResourcesList resources={allData[selectedField]?.results} />
+        )}
+      </Stack>
     </div>
   );
 }
