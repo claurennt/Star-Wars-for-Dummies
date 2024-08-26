@@ -4,6 +4,6 @@ export const isArrayOfUrls = (value: any) =>
   value.length &&
   value.every((item) => typeof item === 'string' && item.startsWith('http'));
 
-// Function to check if a value is a valid URL
+// Function to check if a value is a url
 export const isValueUrl = (value: any) =>
   typeof value === 'string' && value.startsWith('http');
