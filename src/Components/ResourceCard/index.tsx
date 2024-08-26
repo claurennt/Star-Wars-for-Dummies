@@ -1,10 +1,15 @@
-import { useState, useCallback } from 'react';
-import axios from 'axios';
+import { useState } from 'react';
+
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
-import { getFromLocalStorage, isArrayOfUrls, isValueUrl } from '../../utils';
+import {
+  getFetchedData,
+  getFromLocalStorage,
+  isArrayOfUrls,
+  isValueUrl,
+} from '../../utils';
 import { MoreInfoButton } from '..';
 
 interface ResourceCardProps {
@@ -18,39 +23,24 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
 }) => {
   const [extraResource, setExtraResource] = useState<any[]>([]);
 
-  const handleClick = useCallback(
-    async (e: React.MouseEvent<HTMLButtonElement>, key: string) => {
-      // Check for cached data
-      const storedData = getFromLocalStorage(key);
+  const handleClick = async (
+    e: React.MouseEvent<HTMLButtonElement>,
+    key: string
+  ) => {
+    // Check for cached data
+    const storedData = getFromLocalStorage(key);
 
-      // if storedData value is truthy get it from localstorage
-      if (storedData && Object.values(storedData).every((data) => data)) {
-        setExtraResource(storedData.results ?? storedData);
-      } else {
-        // Get URL data from the button
-        const linksToExtraResources = e.currentTarget.getAttribute('data-url');
-        const parsedUrls = linksToExtraResources
-          ? JSON.parse(linksToExtraResources)
-          : [];
-
-        try {
-          // Fetch data for all URLs (either a single URL or an array of URLs).
-          const response = await Promise.all(
-            Array.isArray(parsedUrls)
-              ? parsedUrls.map((url: string) => axios.get(url))
-              : [axios.get(parsedUrls)]
-          );
-
-          // Extract and update extra resource data
-          const data = response.map((res) => res.data);
-          setExtraResource(data);
-        } catch (err) {
-          console.error('Error fetching data:', err);
-        }
-      }
-    },
-    []
-  );
+    // if storedData value is truthy get it from localstorage
+    if (storedData && Object.values(storedData).every((data) => data)) {
+      setExtraResource(storedData.results ?? storedData);
+    } else {
+      // Get URL data from the button
+      const linksToExtraResources =
+        e.currentTarget.getAttribute('data-url') || '';
+      const data = await getFetchedData(linksToExtraResources);
+      setExtraResource(data);
+    }
+  };
 
   const renderContent = (key: string, value: any, content: string) => {
     // if field is array of urls show button with fetch functionality
