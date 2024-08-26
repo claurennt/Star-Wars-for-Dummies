@@ -1,18 +1,77 @@
+import { useState, useCallback } from 'react';
+import axios from 'axios';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
-import { isArrayOfUrls, isValueUrl } from '../../utils';
+import { getFromLocalStorage, isArrayOfUrls, isValueUrl } from '../../utils';
+import { MoreInfoButton } from '..';
 
 interface ResourceCardProps {
   isNested?: boolean;
-  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  [key: string]: any;
+  resource: any;
 }
 
-export const ResourceCard: React.FC<ResourceCardProps> = (props) => {
-  const { isNested, onClick, resource, extraResource } = props;
+export const ResourceCard: React.FC<ResourceCardProps> = ({
+  isNested,
+  resource,
+}) => {
+  const [extraResource, setExtraResource] = useState<any[]>([]);
+
+  const handleClick = useCallback(
+    async (e: React.MouseEvent<HTMLButtonElement>, key: string) => {
+      // Check for cached data
+      const storedData = getFromLocalStorage(key);
+
+      // if storedData value is truthy get it from localstorage
+      if (storedData && Object.values(storedData).every((data) => data)) {
+        setExtraResource(storedData.results ?? storedData);
+      } else {
+        // Get URL data from the button
+        const linksToExtraResources = e.currentTarget.getAttribute('data-url');
+        const parsedUrls = linksToExtraResources
+          ? JSON.parse(linksToExtraResources)
+          : [];
+
+        try {
+          // Fetch data for all URLs (either a single URL or an array of URLs).
+          const response = await Promise.all(
+            Array.isArray(parsedUrls)
+              ? parsedUrls.map((url: string) => axios.get(url))
+              : [axios.get(parsedUrls)]
+          );
+
+          // Extract and update extra resource data
+          const data = response.map((res) => res.data);
+          setExtraResource(data);
+        } catch (err) {
+          console.error('Error fetching data:', err);
+        }
+      }
+    },
+    []
+  );
+
+  const renderContent = (key: string, value: any, content: string) => {
+    // if field is array of urls show button with fetch functionality
+
+    if (isArrayOfUrls(value) || isValueUrl(value)) {
+      return isNested ? null : (
+        <MoreInfoButton
+          topic={key}
+          onClick={(e) => handleClick(e, key)}
+          value={value as string}
+        />
+      );
+    }
+
+    // show field only if it has content
+    if (Boolean(value?.length)) {
+      return <Typography>{content}</Typography>;
+    }
+
+    return null;
+  };
 
   return (
     <Stack
@@ -21,6 +80,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = (props) => {
       justifyContent='center'
       flexWrap='nowrap'
       useFlexGap
+      key={resource.name}
     >
       <Card
         sx={{
@@ -31,16 +91,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = (props) => {
         }}
       >
         {Object.entries(resource)
-          .filter(([key, value]) => {
-            // exclude those two fields from shown data
-            if (['created', 'edited'].includes(key)) {
-              return false;
-            }
-            // filter out if nested and the value is a URL or an array of URLs
-            return isNested
-              ? !(isValueUrl(value) || isArrayOfUrls(value))
-              : true;
-          })
+          .filter(([key]) => !['created', 'edited', 'url'].includes(key))
           .map(([key, value]) => {
             const content = `${key}: ${
               Array.isArray(value) ? value.join(', ') : value
@@ -48,39 +99,17 @@ export const ResourceCard: React.FC<ResourceCardProps> = (props) => {
 
             return (
               <CardContent key={key}>
-                {!isNested ? (
-                  isArrayOfUrls(value) ? (
-                    <Button
-                      data-name={resource.name}
-                      onClick={onClick}
-                      variant='contained'
-                      data-url={JSON.stringify(value)}
-                    >
-                      Discover all related {key}
-                    </Button>
-                  ) : isValueUrl(value) ? (
-                    <Button
-                      data-name={resource.name}
-                      onClick={onClick}
-                      variant='outlined'
-                      data-url={JSON.stringify(value)}
-                    >
-                      Discover more information about {key}
-                    </Button>
-                  ) : (
-                    <Typography>{content}</Typography>
-                  )
-                ) : (
-                  <Typography>{content}</Typography>
-                )}
+                {renderContent(key, value, content)}
               </CardContent>
             );
           })}
       </Card>
-      {extraResource?.length &&
-        extraResource.map((resource: any) => (
-          <ResourceCard isNested key={resource.name} resource={resource} />
-        ))}
+      {/* resursively  render ResourceCard to display extra fetched resource */}
+      {extraResource.length
+        ? extraResource.map((resource: any) => (
+            <ResourceCard isNested key={resource.name} resource={resource} />
+          ))
+        : null}
     </Stack>
   );
 };
