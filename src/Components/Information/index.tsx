@@ -1,11 +1,9 @@
-type InformationProp = {
-  chosenResourceCount: number;
-  chosenResource: string;
-};
+import { InformationProps } from '../../types';
+
 export const Information = ({
   chosenResourceCount,
   chosenResource,
-}: InformationProp) => {
+}: InformationProps) => {
   return (
     <>
       <h3>It seems like you have selected {chosenResource}</h3>

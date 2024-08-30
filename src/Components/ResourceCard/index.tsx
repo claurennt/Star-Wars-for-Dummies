@@ -4,6 +4,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
+
 import {
   getFetchedData,
   getFromLocalStorage,
@@ -11,17 +12,20 @@ import {
   isValueUrl,
   memoizedTransformFieldName,
 } from '../../utils';
+import { ResourceCardProps, StarWarsResource } from '../../types';
+
 import { MoreInfoButton } from '..';
 
-interface ResourceCardProps {
-  isNested?: boolean;
-  resource: any;
-}
+const filterFields = ([key]: [string, any]): boolean =>
+  !['created', 'edited', 'url'].includes(key);
 
-export const ResourceCard: React.FC<ResourceCardProps> = ({
+const getContent = (key: string, value: any) =>
+  `${key}: ${Array.isArray(value) ? value.join(', ') : value}`;
+
+export const ResourceCard = ({
   isNested,
   resource,
-}) => {
+}: ResourceCardProps<StarWarsResource>) => {
   const [extraResource, setExtraResource] = useState<any[]>([]);
 
   const handleClick = async (
@@ -43,7 +47,11 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
     }
   };
 
-  const renderContent = (key: string, value: any, content: string) => {
+  const renderContent = (
+    key: string,
+    value: string | string[],
+    content: string
+  ) => {
     // if field is array of urls show button with fetch functionality
 
     if (isArrayOfUrls(value) || isValueUrl(value)) {
@@ -66,7 +74,12 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
 
     return null;
   };
-
+  const cardContent: React.ReactNode[] = Object.entries(resource)
+    .filter(filterFields)
+    .map(([key, value]) => {
+      const content = getContent(key, value);
+      return renderContent(key, value, content);
+    });
   return (
     <Stack
       direction={extraResource?.length ? 'row' : 'column'}
@@ -74,9 +87,9 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
       justifyContent='center'
       flexWrap='nowrap'
       useFlexGap
-      key={resource.name}
     >
       <Card
+        raised
         sx={{
           minWidth: 250,
           maxWidth: 500,
@@ -84,26 +97,14 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
           background: isNested ? 'lightblue' : 'lightpurple',
         }}
       >
-        {Object.entries(resource)
-          .filter(([key]) => !['created', 'edited', 'url'].includes(key))
-          .map(([key, value]) => {
-            const content = `${key}: ${
-              Array.isArray(value) ? value.join(', ') : value
-            }`;
-
-            return (
-              <CardContent key={key}>
-                {renderContent(key, value, content)}
-              </CardContent>
-            );
-          })}
+        <CardContent style={{ lineHeight: '80px' }}>{cardContent}</CardContent>
       </Card>
       {/* resursively  render ResourceCard to display extra fetched resource */}
       {extraResource.length
-        ? extraResource.map((resource: any, index: number) => (
+        ? extraResource.map((resource: StarWarsResource, index: number) => (
             <ResourceCard
               isNested
-              key={`nested-${resource.name}-${index}`}
+              key={`nested-${resource.created}-${index}`}
               resource={resource}
             />
           ))

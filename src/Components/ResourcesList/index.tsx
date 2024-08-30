@@ -1,7 +1,8 @@
 import { ResourceCard } from '..';
 import Stack from '@mui/material/Stack';
+import { ResourcesListProps } from '../../types';
 
-export const ResourcesList = ({ resources }: any) => {
+export const ResourcesList = <T,>({ resources }: ResourcesListProps<T>) => {
   return (
     <Stack
       direction='column'
@@ -11,7 +12,7 @@ export const ResourcesList = ({ resources }: any) => {
     >
       {resources?.map((resource: any, index: number) => (
         <ResourceCard
-          key={`main-${resource.name}-${index}`}
+          key={`main-${resource.created}-${index}`}
           resource={resource}
         />
       ))}

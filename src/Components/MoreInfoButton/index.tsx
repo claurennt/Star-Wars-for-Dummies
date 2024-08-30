@@ -1,11 +1,6 @@
 import Button from '@mui/material/Button';
-import React from 'react';
+import { MoreInfoButtonProps } from '../../types';
 
-type MoreInfoButtonProps = {
-  onClick: React.MouseEventHandler<HTMLButtonElement>;
-  value: string | string[];
-  topic: string;
-};
 export const MoreInfoButton = ({
   onClick,
   value,

@@ -1,29 +1,26 @@
-import axios, { AxiosResponse } from 'axios';
+import axios from 'axios';
 import './App.css';
 import { useEffect, useState } from 'react';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import { ResourcesList, Information } from './Components';
 import { getFromLocalStorage, saveToLocalStorage } from './utils';
+import { ResourceMapping, ResourceName, StoredData } from './types';
 
-interface ApiReturnDataStructure {
-  count: number;
-  previous: null | string;
-  next: null | string;
-  results: [{ [key: string]: any }] | null;
-}
 function App() {
-  const [resources, setResources] = useState<string[]>([]);
-  const [selectedField, setSelectedField] = useState<string>('');
-  const [allData, setAllData] = useState<{
-    [key: string]: ApiReturnDataStructure;
-  }>({});
+  const [resources, setResources] = useState<ResourceName[]>([]);
+  const [selectedField, setSelectedField] = useState<ResourceName | ''>('');
+  const [allData, setAllData] = useState<
+    Record<ResourceName, any> | undefined
+  >();
 
   // Fetch resource names and update state
   const fetchResourcesName = async () => {
     try {
-      const { data } = await axios.get<AxiosResponse>('https://swapi.dev/api/');
-      const nameOfResources = Object.keys(data);
+      const { data } = await axios.get<{ [key: string]: string }>(
+        'https://swapi.dev/api/'
+      );
+      const nameOfResources = Object.keys(data) as ResourceName[];
 
       setResources(nameOfResources);
       saveToLocalStorage('nameOfResources', nameOfResources);
@@ -32,21 +29,30 @@ function App() {
     }
   };
 
+  const isResourceName = (key: any): key is ResourceName => {
+    return allData !== undefined && key in allData;
+  };
+
   // Fetch data for each resource once resource names are available
-  const fetchResources = async (nameOfResources: string[]) => {
+  const fetchResources = async (nameOfResources: ResourceName[]) => {
     try {
-      const promises = nameOfResources.map((resource: string) =>
-        axios.get(`https://swapi.dev/api/${resource}`)
+      // Create a list of promises for fetching data
+      const promises = nameOfResources.map((resource) =>
+        axios.get<ResourceMapping[ResourceName]>(
+          `https://swapi.dev/api/${resource}`
+        )
       );
+
+      // Wait for all promises to resolve
       const response = await Promise.all(promises);
 
-      // create state with mapped data and cache data to localstorage
+      // Create a state with mapped data and cache data to local storage
       const resourceData = nameOfResources.reduce((acc, curr, index) => {
         acc[curr] = response[index].data;
 
         saveToLocalStorage(curr, response[index].data);
         return acc;
-      }, {} as Record<string, any>);
+      }, {} as Record<ResourceName, any>);
 
       setAllData(resourceData);
     } catch (err) {
@@ -56,7 +62,7 @@ function App() {
 
   useEffect(() => {
     const storedResources = getFromLocalStorage('nameOfResources') as
-      | string[]
+      | ResourceName[]
       | null;
 
     // set state with cached data if available else fetch
@@ -69,26 +75,28 @@ function App() {
 
   // Trigger fetching of actual resource data once resource names are available
   useEffect(() => {
-    // create mapped data structure from cached data
-    const storedData = resources.length
-      ? resources.reduce((acc, curr, index) => {
-          const data = getFromLocalStorage(curr);
-          acc[curr] = data;
+    if (resources.length > 0) {
+      // create mapped data structure from cached data
+      const storedData: StoredData = resources.length
+        ? resources.reduce((acc, curr) => {
+            const data = getFromLocalStorage(curr);
+            acc[curr] = data;
 
-          return acc;
-        }, {} as Record<string, any>)
-      : {};
+            return acc;
+          }, {} as StoredData)
+        : ({} as StoredData);
 
-    // set state with cached data if available else fetch
-    if (Object.values(storedData).every((data) => data)) {
-      setAllData(storedData);
-    } else {
-      fetchResources(resources);
+      // set state with cached data if available else fetch
+      if (Object.values(storedData).every((data) => data)) {
+        setAllData(storedData);
+      } else {
+        fetchResources(resources);
+      }
     }
   }, [resources]);
 
   const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    const value = e.currentTarget.innerText.toLowerCase();
+    const value = e.currentTarget.innerText.toLowerCase() as ResourceName;
     setSelectedField(value);
   };
 
@@ -104,7 +112,7 @@ function App() {
         ))}
       </Stack>
       <main>
-        {allData[selectedField] && (
+        {isResourceName(selectedField) && allData?.[selectedField] && (
           <Information
             chosenResource={selectedField}
             chosenResourceCount={allData[selectedField]?.count}
@@ -118,7 +126,7 @@ function App() {
           useFlexGap
         >
           {selectedField && (
-            <ResourcesList resources={allData[selectedField]?.results} />
+            <ResourcesList resources={allData?.[selectedField]?.results} />
           )}
         </Stack>
       </main>
