@@ -1,9 +1,13 @@
 import axios from 'axios';
 import './App.css';
 import { useEffect, useState } from 'react';
-import Button from '@mui/material/Button';
-import Stack from '@mui/material/Stack';
-import { ResourcesList, Information } from './Components';
+
+import {
+  ResourcesList,
+  Information,
+  intro,
+  ResourcesButtons,
+} from './Components';
 import { getFromLocalStorage, saveToLocalStorage } from './utils';
 import { ResourceMapping, ResourceName, StoredData } from './types';
 
@@ -102,33 +106,18 @@ function App() {
 
   return (
     <div className='App'>
-      <h1>Star Wars for Dummies</h1>
-      <h2>To start exploring the world of Star Wars pick a resource below:</h2>
-      <Stack direction='row' spacing={2} justifyContent='center'>
-        {resources?.map((resource) => (
-          <Button variant='contained' onClick={handleClick} key={resource}>
-            {resource}
-          </Button>
-        ))}
-      </Stack>
+      {intro}
+      <ResourcesButtons resources={resources} handleClick={handleClick} />
       <main>
         {isResourceName(selectedField) && allData?.[selectedField] && (
           <Information
             chosenResource={selectedField}
             chosenResourceCount={allData[selectedField]?.count}
           />
+        )}{' '}
+        {selectedField && (
+          <ResourcesList resources={allData?.[selectedField]?.results} />
         )}
-        <Stack
-          direction='column'
-          spacing={4}
-          justifyContent='center'
-          flexWrap='wrap'
-          useFlexGap
-        >
-          {selectedField && (
-            <ResourcesList resources={allData?.[selectedField]?.results} />
-          )}
-        </Stack>
       </main>
     </div>
   );

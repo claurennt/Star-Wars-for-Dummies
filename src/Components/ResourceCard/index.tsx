@@ -81,23 +81,31 @@ export const ResourceCard = ({
       return renderContent(key, value, content);
     });
   return (
-    <Stack
-      direction={extraResource?.length ? 'row' : 'column'}
-      spacing={4}
-      justifyContent='center'
-      flexWrap='nowrap'
-      useFlexGap
-    >
+    <Stack spacing={4} justifyContent='center' useFlexGap>
       <Card
         raised
         sx={{
+          color: 'white',
           minWidth: 250,
           maxWidth: 500,
           minHeight: 500,
-          background: isNested ? 'lightblue' : 'lightpurple',
+          // background: isNested ? 'lightblue' : 'lightpurple',
+          background:
+            'linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(90, 90, 90, 0.25), rgba(30, 30, 30, 0.75))',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: '0px 4px 15px rgba(0, 0, 0, 0.5)',
         }}
       >
-        <CardContent style={{ lineHeight: '80px' }}>{cardContent}</CardContent>
+        <CardContent
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            textAlign: 'initial!important',
+          }}
+        >
+          {cardContent}
+        </CardContent>
       </Card>
       {/* resursively  render ResourceCard to display extra fetched resource */}
       {extraResource.length
