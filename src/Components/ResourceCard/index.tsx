@@ -49,6 +49,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
     if (isArrayOfUrls(value) || isValueUrl(value)) {
       return isNested ? null : (
         <MoreInfoButton
+          key={key}
           topic={key}
           onClick={(e) => handleClick(e, key)}
           value={value as string}
@@ -58,7 +59,9 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
 
     // show field only if it has content
     if (Boolean(value?.length)) {
-      return <Typography>{memoizedTransformFieldName(content)}</Typography>;
+      return (
+        <Typography key={key}>{memoizedTransformFieldName(content)}</Typography>
+      );
     }
 
     return null;
@@ -97,8 +100,12 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
       </Card>
       {/* resursively  render ResourceCard to display extra fetched resource */}
       {extraResource.length
-        ? extraResource.map((resource: any) => (
-            <ResourceCard isNested key={resource.name} resource={resource} />
+        ? extraResource.map((resource: any, index: number) => (
+            <ResourceCard
+              isNested
+              key={`nested-${resource.name}-${index}`}
+              resource={resource}
+            />
           ))
         : null}
     </Stack>

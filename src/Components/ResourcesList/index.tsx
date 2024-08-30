@@ -9,8 +9,11 @@ export const ResourcesList = ({ resources }: any) => {
       justifyContent='center'
       flexWrap='wrap'
     >
-      {resources?.map((resource: any) => (
-        <ResourceCard key={resource.name} resource={resource} />
+      {resources?.map((resource: any, index: number) => (
+        <ResourceCard
+          key={`main-${resource.name}-${index}`}
+          resource={resource}
+        />
       ))}
     </Stack>
   );
