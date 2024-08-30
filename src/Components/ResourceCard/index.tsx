@@ -9,6 +9,7 @@ import {
   getFromLocalStorage,
   isArrayOfUrls,
   isValueUrl,
+  memoizedTransformFieldName,
 } from '../../utils';
 import { MoreInfoButton } from '..';
 
@@ -57,7 +58,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
 
     // show field only if it has content
     if (Boolean(value?.length)) {
-      return <Typography>{content}</Typography>;
+      return <Typography>{memoizedTransformFieldName(content)}</Typography>;
     }
 
     return null;
