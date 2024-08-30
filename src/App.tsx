@@ -103,23 +103,25 @@ function App() {
           </Button>
         ))}
       </Stack>
-      {allData[selectedField] && (
-        <Information
-          chosenResource={selectedField}
-          chosenResourceCount={allData[selectedField]?.count}
-        />
-      )}
-      <Stack
-        direction='column'
-        spacing={4}
-        justifyContent='center'
-        flexWrap='wrap'
-        useFlexGap
-      >
-        {selectedField && (
-          <ResourcesList resources={allData[selectedField]?.results} />
+      <main>
+        {allData[selectedField] && (
+          <Information
+            chosenResource={selectedField}
+            chosenResourceCount={allData[selectedField]?.count}
+          />
         )}
-      </Stack>
+        <Stack
+          direction='column'
+          spacing={4}
+          justifyContent='center'
+          flexWrap='wrap'
+          useFlexGap
+        >
+          {selectedField && (
+            <ResourcesList resources={allData[selectedField]?.results} />
+          )}
+        </Stack>
+      </main>
     </div>
   );
 }
