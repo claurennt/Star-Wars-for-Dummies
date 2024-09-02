@@ -4,23 +4,28 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
+
 import {
   getFetchedData,
   getFromLocalStorage,
   isArrayOfUrls,
   isValueUrl,
+  memoizedTransformFieldName,
 } from '../../utils';
+import { ResourceCardProps, StarWarsResource } from '../../types';
+
 import { MoreInfoButton } from '..';
 
-interface ResourceCardProps {
-  isNested?: boolean;
-  resource: any;
-}
+const filterFields = ([key]: [string, any]): boolean =>
+  !['created', 'edited', 'url'].includes(key);
 
-export const ResourceCard: React.FC<ResourceCardProps> = ({
+const getContent = (key: string, value: any) =>
+  `${key}: ${Array.isArray(value) ? value.join(', ') : value}`;
+
+export const ResourceCard = ({
   isNested,
   resource,
-}) => {
+}: ResourceCardProps<StarWarsResource>) => {
   const [extraResource, setExtraResource] = useState<any[]>([]);
 
   const handleClick = async (
@@ -42,12 +47,17 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
     }
   };
 
-  const renderContent = (key: string, value: any, content: string) => {
+  const renderContent = (
+    key: string,
+    value: string | string[],
+    content: string
+  ) => {
     // if field is array of urls show button with fetch functionality
 
     if (isArrayOfUrls(value) || isValueUrl(value)) {
       return isNested ? null : (
         <MoreInfoButton
+          key={key}
           topic={key}
           onClick={(e) => handleClick(e, key)}
           value={value as string}
@@ -57,47 +67,54 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
 
     // show field only if it has content
     if (Boolean(value?.length)) {
-      return <Typography>{content}</Typography>;
+      return (
+        <Typography key={key}>{memoizedTransformFieldName(content)}</Typography>
+      );
     }
 
     return null;
   };
-
+  const cardContent: React.ReactNode[] = Object.entries(resource)
+    .filter(filterFields)
+    .map(([key, value]) => {
+      const content = getContent(key, value);
+      return renderContent(key, value, content);
+    });
   return (
-    <Stack
-      direction={extraResource?.length ? 'row' : 'column'}
-      spacing={4}
-      justifyContent='center'
-      flexWrap='nowrap'
-      useFlexGap
-      key={resource.name}
-    >
+    <Stack spacing={4} justifyContent='center' useFlexGap>
       <Card
+        raised
         sx={{
+          color: 'white',
           minWidth: 250,
           maxWidth: 500,
           minHeight: 500,
-          background: isNested ? 'lightblue' : 'lightpurple',
+          // background: isNested ? 'lightblue' : 'lightpurple',
+          background:
+            'linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(90, 90, 90, 0.25), rgba(30, 30, 30, 0.75))',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: '0px 4px 15px rgba(0, 0, 0, 0.5)',
         }}
       >
-        {Object.entries(resource)
-          .filter(([key]) => !['created', 'edited', 'url'].includes(key))
-          .map(([key, value]) => {
-            const content = `${key}: ${
-              Array.isArray(value) ? value.join(', ') : value
-            }`;
-
-            return (
-              <CardContent key={key}>
-                {renderContent(key, value, content)}
-              </CardContent>
-            );
-          })}
+        <CardContent
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            textAlign: 'initial!important',
+          }}
+        >
+          {cardContent}
+        </CardContent>
       </Card>
       {/* resursively  render ResourceCard to display extra fetched resource */}
       {extraResource.length
-        ? extraResource.map((resource: any) => (
-            <ResourceCard isNested key={resource.name} resource={resource} />
+        ? extraResource.map((resource: StarWarsResource, index: number) => (
+            <ResourceCard
+              isNested
+              key={`nested-${resource.created}-${index}`}
+              resource={resource}
+            />
           ))
         : null}
     </Stack>

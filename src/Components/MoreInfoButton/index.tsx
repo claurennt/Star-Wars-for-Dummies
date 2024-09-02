@@ -1,23 +1,33 @@
-import Button from '@mui/material/Button';
-import React from 'react';
+import Button, { ButtonProps } from '@mui/material/Button';
+import { MoreInfoButtonProps } from '../../types';
+import { styled } from '@mui/material/styles';
 
-type MoreInfoButtonProps = {
-  onClick: React.MouseEventHandler<HTMLButtonElement>;
-  value: string | string[];
-  topic: string;
-};
+const CustomButton = styled(Button)<ButtonProps>({
+  display: 'block',
+  background: '#333333',
+  color: '#34D399',
+  fontWeight: 'bold',
+  top: '10px',
+  margin: '5px',
+  '&:hover': {
+    backgroundColor: '#258a65',
+    color: 'white',
+  },
+  '&:active': {
+    backgroundColor: '#333333',
+    color: '#34D399',
+  },
+});
 export const MoreInfoButton = ({
   onClick,
   value,
   topic,
 }: MoreInfoButtonProps) => (
-  <Button
+  <CustomButton
     onClick={onClick}
     variant={typeof value === 'string' ? 'outlined' : 'contained'}
     data-url={JSON.stringify(value)}
   >
-    {typeof value === 'string'
-      ? `Discover more info about ${topic}`
-      : `Discover all related ${topic}`}
-  </Button>
+    {topic}
+  </CustomButton>
 );
